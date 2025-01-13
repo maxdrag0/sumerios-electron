@@ -380,7 +380,7 @@
   });
 
   onMounted(() => {
-    console.log("INGRESADO GASTO PARTICULAR")
+    cargarProveedoresAdm();
   });
 
   onUnmounted(() => {

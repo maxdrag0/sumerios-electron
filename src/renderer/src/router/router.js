@@ -9,6 +9,7 @@ import Proveedor from '@renderer/views/Proveedor.vue';
 import Ingreso from '@renderer/views/Ingreso.vue';
 import Egreso from '@renderer/views/Egreso.vue';
 import PagoUF from '@renderer/views/PagoUF.vue';
+import CrearAdministracion from '@renderer/views/CrearAdministracion.vue';
 import CrearConsorcio from '@renderer/views/CrearConsorcio.vue';
 import CrearUF from '@renderer/views/CrearUF.vue';
 import Login from '@renderer/views/Login.vue';
@@ -86,6 +87,11 @@ const routes = [
       component: Expensas,
       meta: { requiresAuth: true },
     },
+    { path: '/crear-administracion',
+      name: 'CrearAdministracion',
+      component: CrearAdministracion,
+      meta: { requiresAuth: true },
+    },
     { path: '/crear-consorcio',
       name: 'CrearConsorcio',
       component: CrearConsorcio,
@@ -122,5 +128,7 @@ router.beforeEach((to, from, next) => {
       next(); // Permite la navegación
   }
 });
+
+
 
 export default router;

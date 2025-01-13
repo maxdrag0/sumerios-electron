@@ -104,10 +104,7 @@
             <div class="modal-content">
               <label for="periodo">Seleccionar Período a cargar:</label>
               <input id="periodo" type="month" v-model="periodoSeleccionado" required/>
-              <h3>{{ expensa.idConsorcio }}</h3>
-              <h3>{{ expensa.periodo }}</h3>
-              <h3>{{ expensa.porcentajeIntereses }}</h3>
-              <h3>{{ expensa.segundoVencimiento }}</h3>
+
               <button @click="crearPeriodo">Enviar Período</button>
             </div>
           </div>

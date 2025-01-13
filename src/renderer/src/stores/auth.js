@@ -33,7 +33,6 @@ export const useAuthStore = defineStore('auth', () => {
       await adminStore.loadAdministradorData(username);
       await intermediaStore.loadIntermedias();
 
-      await router.push({ name: 'home' });
     } catch (error) {
       alert('Error al iniciar sesión');
       console.error('Error al iniciar sesión:', error);

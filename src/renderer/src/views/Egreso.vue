@@ -53,7 +53,7 @@
                 {{ proveedor.nombre }}
               </option>
             </select>
-            <button type="button" class="btn btn-primary btn-sm">
+            <button @click="crearProveedor" type="button" class="btn btn-primary btn-sm">
               + Nuevo
             </button>
           </div>
@@ -156,165 +156,42 @@
 </template>
 
 <script setup>
-import BotonConsorcio from "@renderer/components/BotonConsorcio.vue";
-import BotonTipoEgreso from "@renderer/components/BotonTipoEgreso.vue";
-import { computed, ref, watch, onUnmounted, onMounted} from "vue";
-import axios from "axios";
-import { useAdminStore } from "@renderer/stores/adminStore";
-import { useConsorcioStore } from "@renderer/stores/consorcioStore";
-import { useTipoEgresoStore } from "@renderer/stores/tipoEgresoStore";
-import { useIntermediaStore } from "@renderer/stores/intermediaStore";
+  import BotonConsorcio from "@renderer/components/BotonConsorcio.vue";
+  import BotonTipoEgreso from "@renderer/components/BotonTipoEgreso.vue";
+  import { computed, ref, watch, onUnmounted, onMounted} from "vue";
+  import axios from "axios";
+  import { useAdminStore } from "@renderer/stores/adminStore";
+  import { useConsorcioStore } from "@renderer/stores/consorcioStore";
+  import { useTipoEgresoStore } from "@renderer/stores/tipoEgresoStore";
+  import { useIntermediaStore } from "@renderer/stores/intermediaStore";
+  import { useRouter, useRoute } from 'vue-router';
 
-const tiposEgreso = ref([
-  { name: 'ABONOS_SERVICIOS', descripcion: 'Abonos de servicios' },
-  { name: 'CARGAS_SOCIALES', descripcion: 'Cargas sociales' },
-  { name: 'FONDO_ADM', descripcion: 'Fondo de administración' },
-  { name: 'GASTOS_ADM', descripcion: 'Gastos de administración' },
-  { name: 'GASTOS_BANCARIOS', descripcion: 'Gastos bancarios' },
-  { name: 'GASTOS_PARTICULARES', descripcion: 'Gastos particulares' },
-  { name: 'MANTENIMIENTO', descripcion: 'Mantenimiento de partes comunes' },
-  { name: 'SEGURO', descripcion: 'Pago de seguro' },
-  { name: 'SERVICIOS_PUBLICOS', descripcion: 'Servicios públicos' },
-  { name: 'OTROS', descripcion: 'Otros' },
-]);
+  // Instancias del router y la ruta actual
+  const router = useRouter();
+  const route = useRoute();
 
-const adminStore = useAdminStore();
-const consorcioStore = useConsorcioStore();
-const tipoEgresoStore = useTipoEgresoStore();
-const intermediaStore = useIntermediaStore();
+  const tiposEgreso = ref([
+    { name: 'ABONOS_SERVICIOS', descripcion: 'Abonos de servicios' },
+    { name: 'CARGAS_SOCIALES', descripcion: 'Cargas sociales' },
+    { name: 'FONDO_ADM', descripcion: 'Fondo de administración' },
+    { name: 'GASTOS_ADM', descripcion: 'Gastos de administración' },
+    { name: 'GASTOS_BANCARIOS', descripcion: 'Gastos bancarios' },
+    { name: 'GASTOS_PARTICULARES', descripcion: 'Gastos particulares' },
+    { name: 'MANTENIMIENTO', descripcion: 'Mantenimiento de partes comunes' },
+    { name: 'SEGURO', descripcion: 'Pago de seguro' },
+    { name: 'SERVICIOS_PUBLICOS', descripcion: 'Servicios públicos' },
+    { name: 'OTROS', descripcion: 'Otros' },
+  ]);
 
-const selectedConsorcio = computed(() => consorcioStore.selectedConsorcio);
-const selectedTipoEgreso = computed(() => tipoEgresoStore.selectedTipoEgreso);
+  const adminStore = useAdminStore();
+  const consorcioStore = useConsorcioStore();
+  const tipoEgresoStore = useTipoEgresoStore();
+  const intermediaStore = useIntermediaStore();
 
-const egreso = ref({
-  idConsorcio: null,
-  idProveedor: null,
-  fecha: "",
-  titulo: "",
-  tipoEgreso: "",
-  formaPago: "",
-  comprobante: "",
-  descripcion: "",
-  categoriaEgreso: "",
-  totalFinal: 0,
-  idExpensa: null,
-  periodo: ""
-});
+  const selectedConsorcio = computed(() => consorcioStore.selectedConsorcio);
+  const selectedTipoEgreso = computed(() => tipoEgresoStore.selectedTipoEgreso);
 
-const egresos = ref([]);
-const proveedores = ref([]);
-const categoriasEgreso = ["A", "B", "C", "D", "E"];
-const estadoCuentaConsorcio = ref(null);
-
-const egresosFiltrados = computed(() => {
-  if (selectedTipoEgreso.value && Array.isArray(egresos.value)) {
-    return egresos.value.filter((egreso) => {
-      return egreso.tipoEgreso === selectedTipoEgreso.value.name;
-    });
-  }
-
-  if (selectedConsorcio.value) {
-    egreso.value = {
-      idEgreso: null,
-      idConsorcio: selectedConsorcio.value.idConsorcio,
-      idProveedor: null,
-      fecha: "",
-      titulo: "",
-      tipoEgreso: "",
-      formaPago: "",
-      comprobante: "",
-      descripcion: "",
-      categoriaEgreso: "",
-      totalFinal: 0,
-      idExpensa: intermediaStore.selectedIntermedia?.idExpensa || null,
-      periodo: intermediaStore.selectedIntermedia.periodo
-    };
-  } else {
-    egreso.value = {
-      idEgreso: null,
-      idConsorcio: null,
-      idProveedor: null,
-      fecha: "",
-      titulo: "",
-      tipoEgreso: "",
-      formaPago: "",
-      comprobante: "",
-      descripcion: "",
-      categoriaEgreso: "",
-      totalFinal: 0,
-      idExpensa: null,
-      periodo: ""
-    };
-  }
-
-  return egresos.value;
-});
-
-const cargarEgresos = async () => {
-  try {
-    if (selectedConsorcio.value) {
-      const response = await axios.get(
-        `http://localhost:8080/api/egresos/consorcio/${selectedConsorcio.value.idConsorcio}/periodo/${intermediaStore.selectedIntermedia.periodo}`
-      );
-      egresos.value = response.data;
-
-    }
-  } catch (error) {
-    console.error("Error al cargar egresos:", error);
-  }
-};
-
-const cargarEstadoCuenta = async () => {
-  try {
-    if (selectedConsorcio.value) {
-      const response = await axios.get(
-        `http://localhost:8080/api/estado_cuenta_consorcio/consorcio/${selectedConsorcio.value.idConsorcio}`
-      );
-      estadoCuentaConsorcio.value = response.data;
-    }
-  } catch (error) {
-    console.error("Error al cargar el estado de cuenta:", error);
-  }
-};
-
-const cargarProveedoresAdm = async () => {
-  try {
-    const response = await axios.get(
-      `http://localhost:8080/api/administraciones/${adminStore.administracionData.idAdm}/proveedores`
-    );
-    proveedores.value = response.data;
-  } catch (error) {
-    console.error("Error al cargar proveedores:", error);
-  }
-};
-
-const obtenerNombreProveedor = (idProveedor) => {
-  const proveedor = proveedores.value.find(prov => prov.idProveedor === idProveedor);
-  return proveedor ? proveedor.nombre : "Proveedor no encontrado";
-};
-
-const seleccionarEgreso = (egresoSeleccionado) => {
-  egreso.value = {
-    idEgreso: egresoSeleccionado.idEgreso,
-    idConsorcio: egresoSeleccionado.idConsorcio,
-    idProveedor: egresoSeleccionado.idProveedor,
-    fecha: egresoSeleccionado.fecha,
-    titulo: egresoSeleccionado.titulo,
-    tipoEgreso: egresoSeleccionado.tipoEgreso,
-    formaPago: egresoSeleccionado.formaPago,
-    comprobante: egresoSeleccionado.comprobante,
-    descripcion: egresoSeleccionado.descripcion,
-    categoriaEgreso: egresoSeleccionado.categoriaEgreso,
-    totalFinal: egresoSeleccionado.totalFinal,
-    idExpensa: egresoSeleccionado.idExpensa,
-    periodo: egresoSeleccionado.periodo
-  };
-
-};
-
-const cancelarEdicion = () => {
-  egreso.value = {
-    idEgreso: null,
+  const egreso = ref({
     idConsorcio: null,
     idProveedor: null,
     fecha: "",
@@ -327,98 +204,127 @@ const cancelarEdicion = () => {
     totalFinal: 0,
     idExpensa: null,
     periodo: ""
-  }
-};
+  });
 
-const crearOEditarEgreso = async () => {
-  try {
-    if (egreso.value.idEgreso !== null) {
-      // Si idEgreso no es null, actualiza el egreso
-      await axios.put(`http://localhost:8080/api/egresos/${egreso.value.idEgreso}`, egreso.value);
-      alert("Egreso actualizado con éxito");
-    } else {
-      // Si idEgreso es null, crea un nuevo egreso
-      await axios.post("http://localhost:8080/api/egresos", egreso.value);
-      alert("Egreso creado con éxito");
+  const egresos = ref([]);
+  const proveedores = ref([]);
+  const categoriasEgreso = ["A", "B", "C", "D", "E"];
+  const estadoCuentaConsorcio = ref(null);
+
+  const egresosFiltrados = computed(() => {
+    if (selectedTipoEgreso.value && Array.isArray(egresos.value)) {
+      return egresos.value.filter((egreso) => {
+        return egreso.tipoEgreso === selectedTipoEgreso.value.name;
+      });
     }
-    await cargarEgresos();
-    await cargarEstadoCuenta();
 
+    if (selectedConsorcio.value) {
+      egreso.value = {
+        idEgreso: null,
+        idConsorcio: selectedConsorcio.value.idConsorcio,
+        idProveedor: null,
+        fecha: "",
+        titulo: "",
+        tipoEgreso: "",
+        formaPago: "",
+        comprobante: "",
+        descripcion: "",
+        categoriaEgreso: "",
+        totalFinal: 0,
+        idExpensa: intermediaStore.selectedIntermedia?.idExpensa || null,
+        periodo: intermediaStore.selectedIntermedia.periodo
+      };
+    } else {
+      egreso.value = {
+        idEgreso: null,
+        idConsorcio: null,
+        idProveedor: null,
+        fecha: "",
+        titulo: "",
+        tipoEgreso: "",
+        formaPago: "",
+        comprobante: "",
+        descripcion: "",
+        categoriaEgreso: "",
+        totalFinal: 0,
+        idExpensa: null,
+        periodo: ""
+      };
+    }
+
+    return egresos.value;
+  });
+
+  const cargarEgresos = async () => {
+    try {
+      if (selectedConsorcio.value) {
+        const response = await axios.get(
+          `http://localhost:8080/api/egresos/consorcio/${selectedConsorcio.value.idConsorcio}/periodo/${intermediaStore.selectedIntermedia.periodo}`
+        );
+        egresos.value = response.data;
+
+      }
+    } catch (error) {
+      console.error("Error al cargar egresos:", error);
+    }
+  };
+
+  const cargarEstadoCuenta = async () => {
+    try {
+      if (selectedConsorcio.value) {
+        const response = await axios.get(
+          `http://localhost:8080/api/estado_cuenta_consorcio/consorcio/${selectedConsorcio.value.idConsorcio}`
+        );
+        estadoCuentaConsorcio.value = response.data;
+      }
+    } catch (error) {
+      console.error("Error al cargar el estado de cuenta:", error);
+    }
+  };
+
+  const cargarProveedoresAdm = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8080/api/administraciones/${adminStore.administracionData.idAdm}/proveedores`
+      );
+      proveedores.value = response.data;
+    } catch (error) {
+      console.error("Error al cargar proveedores:", error);
+    }
+  };
+
+  const crearProveedor = ()=>{
+    router.push({ name: 'proveedores' });
+
+  }
+
+  const obtenerNombreProveedor = (idProveedor) => {
+    const proveedor = proveedores.value.find(prov => prov.idProveedor === idProveedor);
+    return proveedor ? proveedor.nombre : "Proveedor no encontrado";
+  };
+
+  const seleccionarEgreso = (egresoSeleccionado) => {
+    egreso.value = {
+      idEgreso: egresoSeleccionado.idEgreso,
+      idConsorcio: egresoSeleccionado.idConsorcio,
+      idProveedor: egresoSeleccionado.idProveedor,
+      fecha: egresoSeleccionado.fecha,
+      titulo: egresoSeleccionado.titulo,
+      tipoEgreso: egresoSeleccionado.tipoEgreso,
+      formaPago: egresoSeleccionado.formaPago,
+      comprobante: egresoSeleccionado.comprobante,
+      descripcion: egresoSeleccionado.descripcion,
+      categoriaEgreso: egresoSeleccionado.categoriaEgreso,
+      totalFinal: egresoSeleccionado.totalFinal,
+      idExpensa: egresoSeleccionado.idExpensa,
+      periodo: egresoSeleccionado.periodo
+    };
+
+  };
+
+  const cancelarEdicion = () => {
     egreso.value = {
       idEgreso: null,
-      idConsorcio: selectedConsorcio.value.idConsorcio,
-      idProveedor: null,
-      fecha: "",
-      titulo: "",
-      tipoEgreso: "",
-      formaPago: "",
-      comprobante: "",
-      descripcion: "",
-      categoriaEgreso: "",
-      totalFinal: 0,
-      idExpensa: null,
-      periodo: ""
-    };
-  } catch (error) {
-    console.error("Error al crear o editar egreso:", error);
-  }
-};
-
-const eliminarEgreso = async (idEgreso) => {
-  const confirmar = confirm('¿Estás seguro de que quieres eliminar el egreso?');
-
-  if(confirmar){
-    try{
-      await axios.delete(`http://localhost:8080/api/egresos/${egreso.value.idEgreso}`);
-      alert('Egreso eliminado con éxito.');
-      await cargarEgresos();
-      await cargarEstadoCuenta();
-
-    } catch (error) {
-      console.error("Error al eliminar  el egreso:", error);
-    }
-  } else{
-    alert("Eliminacion cancelada")
-  }
-}
-const handleSelectChange = ()=>{
-  if (egreso.value.tipoEgreso === "-") {
-    deselectTipoEgreso();
-  }
-}
-const deselectTipoEgreso = ()=>{
-  tipoEgresoStore.setTipoEgreso(null);
-}
-
-// Cargar datos automáticamente cuando cambie el consorcio
-watch(selectedConsorcio, () => {
-  if (selectedConsorcio.value) {
-    cargarEgresos();
-    cargarEstadoCuenta();
-    cargarProveedoresAdm();
-  }
-
-  tipoEgresoStore.setTipoEgreso(null)
-
-  if(selectedConsorcio.value){
-    egreso.value = {
-      idEgreso:null,
-      idConsorcio: selectedConsorcio.value.idConsorcio,
-      idProveedor: null,
-      fecha: "",
-      titulo: "",
-      tipoEgreso: "",
-      formaPago: "",
-      comprobante: "",
-      descripcion: "",
-      categoriaEgreso: "",
-      totalFinal: 0,
-      idExpensa: intermediaStore.selectedIntermedia?.idExpensa || null,
-      periodo: intermediaStore.selectedIntermedia.periodo
-    };
-  } else {
-    egreso.value = {
-      idEgreso:null,
       idConsorcio: null,
       idProveedor: null,
       fecha: "",
@@ -431,16 +337,123 @@ watch(selectedConsorcio, () => {
       totalFinal: 0,
       idExpensa: null,
       periodo: ""
-    };
+    }
+  };
+
+  const crearOEditarEgreso = async () => {
+    try {
+      if (egreso.value.idEgreso !== null) {
+        // Si idEgreso no es null, actualiza el egreso
+        await axios.put(`http://localhost:8080/api/egresos/${egreso.value.idEgreso}`, egreso.value);
+        alert("Egreso actualizado con éxito");
+      } else {
+        // Si idEgreso es null, crea un nuevo egreso
+        await axios.post("http://localhost:8080/api/egresos", egreso.value);
+        alert("Egreso creado con éxito");
+      }
+      await cargarEgresos();
+      await cargarEstadoCuenta();
+
+      egreso.value = {
+        idEgreso: null,
+        idConsorcio: selectedConsorcio.value.idConsorcio,
+        idProveedor: null,
+        fecha: "",
+        titulo: "",
+        tipoEgreso: "",
+        formaPago: "",
+        comprobante: "",
+        descripcion: "",
+        categoriaEgreso: "",
+        totalFinal: 0,
+        idExpensa: null,
+        periodo: ""
+      };
+    } catch (error) {
+      console.error("Error al crear o editar egreso:", error);
+    }
+  };
+
+  const eliminarEgreso = async (idEgreso) => {
+    const confirmar = confirm('¿Estás seguro de que quieres eliminar el egreso?');
+
+    if(confirmar){
+      try{
+        await axios.delete(`http://localhost:8080/api/egresos/${egreso.value.idEgreso}`);
+        alert('Egreso eliminado con éxito.');
+        await cargarEgresos();
+        await cargarEstadoCuenta();
+
+      } catch (error) {
+        console.error("Error al eliminar  el egreso:", error);
+      }
+    } else{
+      alert("Eliminacion cancelada")
+    }
+  }
+  const handleSelectChange = ()=>{
+    if (egreso.value.tipoEgreso === "-") {
+      deselectTipoEgreso();
+    }
+  }
+  const deselectTipoEgreso = ()=>{
+    tipoEgresoStore.setTipoEgreso(null);
   }
 
-});
+  // Cargar datos automáticamente cuando cambie el consorcio
+  watch(selectedConsorcio, () => {
+    if (selectedConsorcio.value) {
+      cargarEgresos();
+      cargarEstadoCuenta();
+      cargarProveedoresAdm();
+    }
 
+    tipoEgresoStore.setTipoEgreso(null)
 
-onUnmounted(() => {
-  consorcioStore.setConsorcio(null);
-  tipoEgresoStore.setTipoEgreso(null)
-});
+    if(selectedConsorcio.value){
+      egreso.value = {
+        idEgreso:null,
+        idConsorcio: selectedConsorcio.value.idConsorcio,
+        idProveedor: null,
+        fecha: "",
+        titulo: "",
+        tipoEgreso: "",
+        formaPago: "",
+        comprobante: "",
+        descripcion: "",
+        categoriaEgreso: "",
+        totalFinal: 0,
+        idExpensa: intermediaStore.selectedIntermedia?.idExpensa || null,
+        periodo: intermediaStore.selectedIntermedia.periodo
+      };
+    } else {
+      egreso.value = {
+        idEgreso:null,
+        idConsorcio: null,
+        idProveedor: null,
+        fecha: "",
+        titulo: "",
+        tipoEgreso: "",
+        formaPago: "",
+        comprobante: "",
+        descripcion: "",
+        categoriaEgreso: "",
+        totalFinal: 0,
+        idExpensa: null,
+        periodo: ""
+      };
+    }
+
+  });
+
+  onMounted(()=>{
+    cargarProveedoresAdm();
+  })
+
+  onUnmounted(() => {
+    consorcioStore.setConsorcio(null);
+    tipoEgresoStore.setTipoEgreso(null);
+  });
 
 </script>
 

@@ -10,12 +10,13 @@
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "build": "vue-cli-service build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux"
+    "build:linux": "npm run build && electron-builder --linux",
+    "electron:build": "electron-builder"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
@@ -39,5 +40,18 @@
     "prettier": "^3.3.2",
     "vite": "^5.3.1",
     "vue": "^3.4.30"
+  },
+  "build": {
+    "appId": "com.example.sumerios",
+    "productName": "Sumerios",
+    "win": {
+      "icon": "/resources/sumerios256.ico"
+    },
+    "mac": {
+      "icon": "/resources/sumerios256.ico"
+    },
+    "linux": {
+      "icon": "/resources/sumerios256.ico"
+    }
   }
 }

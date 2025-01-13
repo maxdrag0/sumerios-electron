@@ -11,7 +11,10 @@ export const useAdminStore = defineStore('admin', () => {
     try {
         const response = await axios.get(`http://localhost:8080/api/admins/username/${username}`);
         administradorData.value = response.data;
-        await loadAdmintracionData(response.data.idAdm);
+        if(response.data.idAdm !== null){
+          await loadAdmintracionData(response.data.idAdm);
+
+        }
     } catch (error) {
       console.error('Error al cargar los datos del administrador:', error);
     }

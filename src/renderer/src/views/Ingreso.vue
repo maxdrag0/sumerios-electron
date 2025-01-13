@@ -310,6 +310,10 @@ watch(selectedConsorcio, () => {
   console.log(JSON.stringify(ingreso.value))
 });
 
+onMounted(() => {
+    cargarProveedoresAdm();
+});
+
 onUnmounted(() => {
   consorcioStore.setConsorcio(null);
 });
